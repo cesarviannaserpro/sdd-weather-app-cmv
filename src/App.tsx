@@ -11,7 +11,7 @@ import type { Unit } from "./types/weather";
 
 export default function App() {
   const [unit, setUnit] = useState<Unit>("celsius");
-  const { data, error, retry, search, status } = useWeather();
+  const { cities, data, error, refresh, retry, search, selectCity, status } = useWeather();
   const resultRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -33,13 +33,26 @@ export default function App() {
       case "empty":
         return <EmptyState />;
       case "error":
-        return <ErrorState message={errorMessage} onRetry={retry} />;
+        return (
+          <div className="space-y-6">
+            <ErrorState message={errorMessage} onRetry={retry} />
+            {data && (
+              <div className="space-y-8">
+                <CurrentWeather city={data.city} current={data.current} fetchedAt={data.fetchedAt} resultRef={resultRef} unit={unit} />
+                <ForecastList forecast={data.forecast} unit={unit} />
+              </div>
+            )}
+          </div>
+        );
       case "success":
         if (!data) {
-          return <ErrorState message={errorMessage} onRetry={retry} />;
+          return <p aria-live="polite" className="rounded-3xl border border-white/10 bg-white/5 p-6 text-slate-300">Selecione uma cidade para carregar a previsão.</p>;
         }
         return (
           <div className="space-y-8">
+            <div className="flex justify-end">
+              <button className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sun" onClick={refresh} type="button">Atualizar</button>
+            </div>
             <CurrentWeather city={data.city} current={data.current} fetchedAt={data.fetchedAt} resultRef={resultRef} unit={unit} />
             <ForecastList forecast={data.forecast} unit={unit} />
           </div>
@@ -66,7 +79,7 @@ export default function App() {
             </span>
           </a>
           <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center lg:w-auto">
-            <SearchBar disabled={status === "loading"} onSearch={search} />
+            <SearchBar cities={status === "success" ? cities : []} disabled={status === "loading"} onSearch={search} onSelect={selectCity} />
             <UnitToggle onChange={setUnit} unit={unit} />
           </div>
         </div>

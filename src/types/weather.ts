@@ -1,5 +1,26 @@
 export type Unit = "celsius" | "fahrenheit";
 
+export type WeatherErrorKind = "network" | "http" | "timeout" | "invalid-response";
+
+export interface WeatherError {
+  kind: WeatherErrorKind;
+  status?: number;
+  message: string;
+}
+
+export type SearchState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "success"; cities: City[] }
+  | { status: "empty" }
+  | { status: "error"; error: WeatherError };
+
+export type WeatherState =
+  | { status: "idle" }
+  | { status: "loading"; previousData?: WeatherData }
+  | { status: "success"; data: WeatherData }
+  | { status: "error"; error: WeatherError; previousData?: WeatherData };
+
 export interface City {
   id: number;
   name: string;

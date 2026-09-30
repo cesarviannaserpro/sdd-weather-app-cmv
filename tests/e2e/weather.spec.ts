@@ -40,6 +40,7 @@ test("busca cidade, mostra previsão e alterna para Fahrenheit", async ({ page }
 
   await page.getByLabel("Buscar cidade").fill("São Paulo");
   await page.getByRole("button", { name: "Buscar" }).click();
+  await page.getByRole("option", { name: /São Paulo/ }).click();
 
   await expect(page.getByRole("heading", { name: "São Paulo" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Previsão de 5 dias" })).toBeVisible();
@@ -67,6 +68,7 @@ test.describe("fluxo principal mobile", () => {
 
     await page.getByLabel("Buscar cidade").fill("São Paulo");
     await page.getByRole("button", { name: "Buscar" }).click();
+    await page.getByRole("option", { name: /São Paulo/ }).click();
 
     await expect(page.getByRole("heading", { name: "São Paulo" })).toBeVisible();
     await expect(page.getByRole("img", { name: "Céu limpo" }).first()).toBeVisible();

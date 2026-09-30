@@ -1,9 +1,13 @@
+import type { City } from "../types/weather";
+
 interface SearchBarProps {
   onSearch: (city: string) => void;
+  onSelect?: (city: City) => void;
+  cities?: City[];
   disabled?: boolean;
 }
 
-export default function SearchBar({ onSearch, disabled = false }: SearchBarProps) {
+export default function SearchBar({ onSearch, onSelect, cities = [], disabled = false }: SearchBarProps) {
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -15,7 +19,7 @@ export default function SearchBar({ onSearch, disabled = false }: SearchBarProps
   }
 
   return (
-    <form aria-busy={disabled} className="w-full max-w-xl" role="search" onSubmit={handleSubmit}>
+    <form aria-busy={disabled} className="relative w-full max-w-xl" role="search" onSubmit={handleSubmit}>
       <label className="sr-only" htmlFor="city-search">
         Buscar cidade
       </label>
@@ -37,6 +41,22 @@ export default function SearchBar({ onSearch, disabled = false }: SearchBarProps
           Buscar
         </button>
       </div>
+      {cities.length > 0 && onSelect && (
+        <div aria-label="Sugestões de cidade" className="absolute z-10 mt-2 w-full rounded-2xl border border-white/10 bg-night-800 p-2 shadow-glass" role="listbox">
+          {cities.map((city) => (
+            <button
+              className="block w-full rounded-xl px-3 py-3 text-left text-sm text-slate-200 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sun"
+              key={city.id}
+              onClick={() => onSelect(city)}
+              role="option"
+              type="button"
+            >
+              <span className="block font-semibold">{city.name}</span>
+              <span className="block text-xs text-slate-400">{[city.region, city.country].filter(Boolean).join(", ")}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </form>
   );
 }

@@ -82,6 +82,15 @@ describe("searchCities", () => {
 
     await expect(searchCities("Recife")).rejects.toMatchObject({ kind: "invalid-response" });
   });
+
+  it.each([
+    { results: [null] },
+    { results: [{ id: 1, name: "São Paulo", latitude: 91, longitude: -46.6 }] },
+  ])("rejects malformed city results", async (payload) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(payload)));
+
+    await expect(searchCities("São Paulo")).rejects.toMatchObject({ kind: "invalid-response" });
+  });
 });
 
 describe("fetchWithTimeout", () => {
@@ -109,6 +118,14 @@ describe("fetchWithTimeout", () => {
 });
 
 describe("getWeather", () => {
+  it("rejects invalid city coordinates before calling fetch", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getWeather({ ...city, latitude: 91 })).rejects.toMatchObject({ kind: "invalid-response" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("maps current weather and five parallel daily entries", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(forecastPayload())));
 
@@ -120,12 +137,12 @@ describe("getWeather", () => {
     expect(result.forecast[3]).toMatchObject({ date: "2026-10-03", temperatureMaxC: 22, precipitationProbabilityPercent: 70 });
   });
 
-  it("normalizes null precipitation to zero", async () => {
+  it("preserves null precipitation for the UI fallback", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(forecastPayload())));
     const result = await getWeather(city);
 
-    expect(result.current.precipitationMm).toBe(0);
-    expect(result.forecast[0].precipitationSumMm).toBe(0);
+    expect(result.current.precipitationMm).toBeNull();
+    expect(result.forecast[0].precipitationSumMm).toBeNull();
   });
 
   it.each([

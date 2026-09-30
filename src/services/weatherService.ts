@@ -2,7 +2,7 @@ import type { City, CurrentWeather, ForecastDay, WeatherData } from "../types/we
 
 const GEOCODING_ENDPOINT = "https://geocoding-api.open-meteo.com/v1/search";
 const FORECAST_ENDPOINT = "https://api.open-meteo.com/v1/forecast";
-const REQUEST_TIMEOUT_MS = 10_000;
+const REQUEST_TIMEOUT_MS = 8_000;
 
 type WeatherServiceErrorKind = "http" | "timeout" | "network" | "invalid-response";
 
@@ -27,6 +27,12 @@ export async function fetchWithTimeout(
   init?: RequestInit,
 ): Promise<Response> {
   const controller = new AbortController();
+  const externalSignal = init?.signal;
+  const abortFromExternalSignal = () => controller.abort(externalSignal?.reason);
+  externalSignal?.addEventListener("abort", abortFromExternalSignal, { once: true });
+  if (externalSignal?.aborted) {
+    controller.abort(externalSignal.reason);
+  }
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
@@ -39,6 +45,7 @@ export async function fetchWithTimeout(
     throw new WeatherServiceError(0, "Falha de rede.");
   } finally {
     clearTimeout(timeoutId);
+    externalSignal?.removeEventListener("abort", abortFromExternalSignal);
   }
 }
 
@@ -69,7 +76,11 @@ interface GeocodingResult {
 }
 
 interface GeocodingResponse {
-  results?: GeocodingResult[] | null;
+  results?: unknown;
+}
+
+interface RequestOptions {
+  signal?: AbortSignal;
 }
 
 interface ForecastCurrentResponse {
@@ -100,15 +111,40 @@ function nullableNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
-function numberOrZero(value: unknown): number {
-  return nullableNumber(value) ?? 0;
-}
-
 function hasFiveItems(value: unknown): value is unknown[] {
   return Array.isArray(value) && value.length >= 5;
 }
 
-export async function searchCities(name: string): Promise<City[]> {
+function isValidCityResult(value: unknown): value is GeocodingResult {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const result = value as Partial<GeocodingResult>;
+  return typeof result.id === "number"
+    && Number.isFinite(result.id)
+    && typeof result.name === "string"
+    && result.name.length > 0
+    && typeof result.latitude === "number"
+    && Number.isFinite(result.latitude)
+    && typeof result.longitude === "number"
+    && Number.isFinite(result.longitude)
+    && result.latitude >= -90
+    && result.latitude <= 90
+    && result.longitude >= -180
+    && result.longitude <= 180;
+}
+
+function isValidCityCoordinates(city: City): boolean {
+  return Number.isFinite(city.latitude)
+    && city.latitude >= -90
+    && city.latitude <= 90
+    && Number.isFinite(city.longitude)
+    && city.longitude >= -180
+    && city.longitude <= 180;
+}
+
+export async function searchCities(name: string, options?: RequestOptions): Promise<City[]> {
   const query = name.trim();
 
   if (!query) {
@@ -116,7 +152,7 @@ export async function searchCities(name: string): Promise<City[]> {
   }
 
   const url = `${GEOCODING_ENDPOINT}?name=${encodeURIComponent(query)}&count=10&language=pt&format=json`;
-  const response = await fetchWithTimeout(url);
+  const response = await fetchWithTimeout(url, options);
 
   if (!response.ok) {
     throw new WeatherServiceError(response.status);
@@ -128,7 +164,12 @@ export async function searchCities(name: string): Promise<City[]> {
     throw new WeatherServiceError(response.status, "A resposta da Open-Meteo é inválida.", "invalid-response");
   }
 
-  return (payload.results ?? []).map((result) => ({
+  const results = payload.results ?? [];
+  if (!Array.isArray(results) || !results.every(isValidCityResult)) {
+    throw new WeatherServiceError(response.status, "A resposta da Open-Meteo é inválida.", "invalid-response");
+  }
+
+  return results.map((result) => ({
     id: result.id,
     name: result.name,
     region: result.admin1 ?? null,
@@ -138,7 +179,11 @@ export async function searchCities(name: string): Promise<City[]> {
   }));
 }
 
-export async function getWeather(city: City): Promise<WeatherData> {
+export async function getWeather(city: City, options?: RequestOptions): Promise<WeatherData> {
+  if (!isValidCityCoordinates(city)) {
+    throw new WeatherServiceError(0, "As coordenadas da cidade são inválidas.", "invalid-response");
+  }
+
   const currentFields = [
     "temperature_2m",
     "relative_humidity_2m",
@@ -166,7 +211,7 @@ export async function getWeather(city: City): Promise<WeatherData> {
     wind_speed_unit: "kmh",
     precipitation_unit: "mm",
   });
-  const response = await fetchWithTimeout(`${FORECAST_ENDPOINT}?${params.toString()}`);
+  const response = await fetchWithTimeout(`${FORECAST_ENDPOINT}?${params.toString()}`, options);
 
   if (!response.ok) {
     throw new WeatherServiceError(response.status);
@@ -213,7 +258,7 @@ export async function getWeather(city: City): Promise<WeatherData> {
     humidityPercent: nullableNumber(payload.current.relative_humidity_2m),
     windSpeedKmh: nullableNumber(payload.current.wind_speed_10m),
     pressureHpa: nullableNumber(payload.current.pressure_msl),
-    precipitationMm: numberOrZero(payload.current.precipitation),
+    precipitationMm: nullableNumber(payload.current.precipitation),
   };
 
   const forecast: ForecastDay[] = Array.from({ length: 5 }, (_, index) => ({
@@ -222,7 +267,7 @@ export async function getWeather(city: City): Promise<WeatherData> {
     temperatureMaxC: nullableNumber(maximums[index]),
     conditionCode: nullableNumber(weatherCodes[index]),
     precipitationProbabilityPercent: nullableNumber(precipitationProbabilities[index]),
-    precipitationSumMm: numberOrZero(precipitationSums[index]),
+    precipitationSumMm: nullableNumber(precipitationSums[index]),
     windSpeedMaxKmh: nullableNumber(windSpeeds[index]),
   }));
 

@@ -39,7 +39,7 @@ describe("useWeather", () => {
     expect(mockedSearchCities).not.toHaveBeenCalled();
   });
 
-  it("loads the first city returned by a search", async () => {
+  it("exposes cities returned by a search until one is selected", async () => {
     mockedSearchCities.mockResolvedValue([city]);
     mockedGetWeather.mockResolvedValue(weather);
     const { result } = renderHook(() => useWeather());
@@ -48,8 +48,8 @@ describe("useWeather", () => {
 
     await waitFor(() => expect(result.current.status).toBe("success"));
     expect(result.current.cities).toEqual([city]);
-    expect(result.current.data).toEqual(weather);
-    expect(mockedGetWeather).toHaveBeenCalledWith(city);
+    expect(result.current.data).toBeNull();
+    expect(mockedGetWeather).not.toHaveBeenCalled();
   });
 
   it("exposes empty when geocoding returns no cities", async () => {
@@ -69,10 +69,24 @@ describe("useWeather", () => {
     const { result } = renderHook(() => useWeather());
 
     await act(async () => result.current.search("São Paulo"));
+    await act(async () => result.current.selectCity(city));
     expect(result.current.status).toBe("error");
 
     await act(async () => result.current.retry());
     await waitFor(() => expect(result.current.status).toBe("success"));
     expect(mockedGetWeather).toHaveBeenCalledTimes(2);
+  });
+
+  it("refreshes the active city and preserves stale data on failure", async () => {
+    mockedGetWeather.mockResolvedValueOnce(weather).mockRejectedValueOnce(new WeatherServiceError(503, "offline"));
+    const { result } = renderHook(() => useWeather());
+
+    await act(async () => result.current.selectCity(city));
+    await waitFor(() => expect(result.current.status).toBe("success"));
+    await act(async () => result.current.refresh());
+
+    expect(result.current.status).toBe("error");
+    expect(result.current.data).toMatchObject({ ...weather, stale: true });
+    expect(result.current.data?.fetchedAt).toBe(weather.fetchedAt);
   });
 });
