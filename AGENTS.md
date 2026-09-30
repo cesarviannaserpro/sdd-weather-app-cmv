@@ -17,7 +17,7 @@ Spec → Plan → Tasks → Code → Test → Review
 
 | Agente        | Arquivo                                                            | Responsabilidade                                                                                        | Entrada → Saída                         |
 | ------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| **Spec**   | [`.github/agents/spec.agent.md`](.github/agents/spec.agent.md)     | Transformar o problema em uma especificação clara (escopo, requisitos, critérios de aceite, edge cases) | Discovery → `specs/weather-app-spec.md` |
+| **Spec**   | [`.github/agents/spec.agent.md`](.github/agents/spec.agent.md)     | Transformar o problema em uma especificação clara (escopo, requisitos, critérios de aceite, edge cases) | Discovery + [`specs/personas.md`](specs/personas.md) → `specs/weather-app-spec.md` |
 | **Plan**   | [`.github/agents/plan.agent.md`](.github/agents/plan.agent.md)     | Traduzir a spec em um plano técnico (arquitetura, stack, contratos, decisões)                           | Spec → `plans/weather-app-plan.md`      |
 | **Task**   | [`.github/agents/task.agent.md`](.github/agents/task.agent.md)     | Quebrar o plano em tarefas pequenas, ordenadas e verificáveis                                           | Plan → `tasks/weather-app-tasks.md`     |
 | **Code**   | [`.github/agents/code.agent.md`](.github/agents/code.agent.md)     | Implementar cada tarefa seguindo as convenções do projeto                                               | Tasks → código em `src/`                |

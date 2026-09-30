@@ -14,6 +14,7 @@ estruturada que sirva de fonte única da verdade para o restante do fluxo SDD.
 
 - Briefing de negócio (texto livre)
 - Análise de discovery (`specs/discovery.md`), quando existir
+- Personas (`specs/personas.md`), quando existir; trate-as como hipóteses, não como pesquisa validada
 
 ## Saída
 
@@ -33,5 +34,6 @@ Arquivo `specs/weather-app-spec.md` contendo, obrigatoriamente:
 
 - Não escreva código nem detalhes de implementação.
 - Toda funcionalidade precisa de critérios de aceite verificáveis.
+- Use as personas para dar contexto às histórias de usuário e aos critérios de aceite, sem inventar dados demográficos ou necessidades não documentadas.
 - Marque ambiguidades como **Open Questions** em vez de adivinhar.
 - Seja explícito e detalhado; prefira listas a parágrafos longos.

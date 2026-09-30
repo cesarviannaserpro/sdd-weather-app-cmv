@@ -3,19 +3,34 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  font-family: Inter, system-ui, sans-serif;
+  color: #f7f8ff;
+  background: #0b1020;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
 }
 
-html,
-body,
-#root {
-  height: 100%;
+* {
+  box-sizing: border-box;
 }
 
 body {
+  min-width: 320px;
+  min-height: 100vh;
   margin: 0;
-  font-family: 'Inter', system-ui, sans-serif;
   background:
-    radial-gradient(circle at 20% 0%, rgba(109, 124, 255, 0.18), transparent 40%),
-    radial-gradient(circle at 80% 10%, rgba(139, 155, 255, 0.12), transparent 35%), #0b1020;
+    radial-gradient(circle at 12% 10%, rgba(109, 124, 255, 0.2), transparent 28rem),
+    radial-gradient(circle at 88% 80%, rgba(245, 185, 66, 0.1), transparent 24rem),
+    #0b1020;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid #f5b942;
+  outline-offset: 3px;
 }

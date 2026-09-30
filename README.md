@@ -47,7 +47,7 @@ Cada módulo tem **README.md**, **challenge.md**, **prompts.md** e
 
 ### Pré-requisitos
 
-- **Node.js**
+- **Node.js 22+** (`.nvmrc` fixa a versão major; com nvm, execute `nvm use` na raiz do projeto)
 - **pnpm** (único gerenciador de pacotes suportado — habilite com `corepack enable`)
 - **GitHub Copilot** habilitado no VS Code
 - Git e uma conta no GitHub (para PR e deploy)

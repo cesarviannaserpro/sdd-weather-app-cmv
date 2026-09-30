@@ -1,5 +1,4 @@
----
-applyTo: '**'
+dfdsfsddfgdsgsapplyTo: '**'
 ---
 
 # SDD Weather App — Instruções do Projeto
